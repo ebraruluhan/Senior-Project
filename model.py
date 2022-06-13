@@ -83,7 +83,7 @@ class CNNModel_Small(nn.Module):
         
     def forward(self, x):
         x = self.conv_net(x)
-        return self.fc(x)
+        return torch.softmax(self.fc(x))
 
 
     def CnnBlock(self, input_dim, output_dim, stride=1, padding = 1):

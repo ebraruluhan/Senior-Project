@@ -1,52 +1,47 @@
 import torch 
-from torchvision.transforms import transforms
-from model import MyModel
+from model import CNNModel_Small, CNNModel
 import matplotlib.pyplot as plt
 from utils import img_convert
-from skimage import io
-import os
 import time 
+from picamera import PiCamera
+import numpy as np
 
 
-def inference(model, image, device):
-
+def predict(model, image, device):
+    image = image.permute(0, 3,1,2).float()
     with torch.no_grad():
         
         image = image.to(device=device)
         scores_class = model(image)
+        print(scores_class)
         _, prediction_label = scores_class.max(1)
             
     return prediction_label
 
-transform = transforms.Compose([transforms.ToPILImage(),
-                                      transforms.Resize((224,224)),
-                                      transforms.ToTensor()
-                                      ])
+label_names = ['Blue square', 'Blue triangle', 'Blue circle', 
+               'Green square', 'Red Square']
 
-label_names = ['blue', 'green', 'red']
-
-model = MyModel(10)
-model.load_state_dict(torch.load('mymodel_v1.pth', map_location='cpu'))
+model = CNNModel(5)
+model.load_state_dict(torch.load('checkpoints/checkpoint_transferlearning.pth', map_location='cpu'))
 model.eval()
+model = model.float()
+
+camera = PiCamera()
+camera.resolution = (32,32)
+
+for i in range(50):
+    # Take image from PiCamera
+    s = time.time()
+    img = np.empty((32, 32, 3), dtype=np.uint8)
+    camera.capture(img, 'rgb')
+
+    p_label = predict(model, torch.tensor(img).unsqueeze(0), 'cpu')
+    print(label_names[p_label])
+    plt.imshow(img)
+    plt.title(f"Predicted: {label_names[p_label]}")
+    plt.savefig("prediction.png")
+    e = time.time()
+    time.sleep(1)
+    print("Time: ", 100*(e-s))
 
 
-s = time.time()
-
-root_dir = "/Users/hcagri/Documents/ComputerVision/projects/ebrar/data/images"
-img_name = "11.jpg"
-
-img_path = os.path.join(root_dir,img_name)
-img = io.imread(img_path)
-
-img = transform(img)
-
-label = inference(model, img.unsqueeze(0), 'cpu')
-
-e = time.time()
-print("Time for one forward pass: ",100*(e-s), " ms")
-
-
-img = img_convert(img)
-plt.imshow(img)
-plt.title(label_names[label])
-plt.show()

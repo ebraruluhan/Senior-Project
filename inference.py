@@ -23,13 +23,13 @@ transform_test = transforms.Compose([transforms.ToPILImage(),
                                       ])
 
 test_dataset = CustomDataset(
-                            root_dir = 'data\data_latest', 
+                            root_dir = 'data/data_latest', 
                             transform=None)
 
-test_loader = DataLoader(dataset=test_dataset, batch_size=20, shuffle=True)
+test_loader = DataLoader(dataset=test_dataset, batch_size=10, shuffle=True)
 
 model = CNNModel_Small(5)
-model.load_state_dict(torch.load('checkpoints\checkpoint_39.pth', map_location='cpu'))
+model.load_state_dict(torch.load('checkpoints/checkpoint_39.pth', map_location='cpu'))
 model.eval()
 model = model.float()
 
@@ -52,7 +52,8 @@ for img,target in zip(imgs,targets):
     img = img_convert(img)
     plt.imshow(img)
     plt.title(f"Predicted: {label_names[label]} | Real: {label_names[target]}")
-    plt.show()
+    plt.savefig("prediction.png")
+    # plt.show()
 
 
 print("Accuracy: ", 100*summ/len(targets))
