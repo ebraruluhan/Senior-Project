@@ -10,8 +10,8 @@ from dataloader_v2 import CustomDataset
 from model import CNNModel, CNNModel_Small
 from utils import check_accuracy
 
-BATCH_SIZE = 64
-EPOCHS = 40
+BATCH_SIZE = 32
+EPOCHS = 100
 LEARNING_RATE = 1e-2
 NUM_CLASSES = 5
 
@@ -41,7 +41,7 @@ train_loader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=
 
 model = CNNModel(NUM_CLASSES).to(device)
 
-state_dict = torch.load('pretrained/checkpoint_37.pth', map_location='cpu')
+state_dict = torch.load('pretrained\checkpoint_37.pth', map_location='cpu')
 del state_dict['fc.3.weight']
 del state_dict['fc.3.bias']
 
@@ -50,13 +50,10 @@ model.load_state_dict(state_dict, strict=False)
 for param in model.conv_net.parameters():
     param.requires_grad = False
 
-for param in model.fc[0].parameters():
-    param.requires_grad = False
-
 
 criterion = nn.CrossEntropyLoss()
 
-optimizer = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE, weight_decay=1e-4)
+optimizer = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE, weight_decay=1e-5)
 
 model = model.float()
 
@@ -84,9 +81,9 @@ for epoch in range(EPOCHS):
 
         loop.set_description(f"Epoch [{epoch+1}/{EPOCHS}]")
       
-    if epoch+1 == 20:
+    if epoch+1 == 60:
         optimizer.param_groups[0]['lr'] = 0.0002
-    if epoch+1 == 33:
+    if epoch+1 == 80:
         optimizer.param_groups[0]['lr'] = 0.00002
     
     if (epoch+1)%5 == 0:
