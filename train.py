@@ -1,3 +1,6 @@
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -7,7 +10,7 @@ from dataloader_v2 import CustomDataset
 from model import CNNModel, CNNModel_Small
 from utils import check_accuracy
 
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 EPOCHS = 40
 LEARNING_RATE = 1e-2
 NUM_CLASSES = 5
@@ -15,13 +18,13 @@ NUM_CLASSES = 5
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-'''
-transform_train = transforms.Compose([transforms.ToTensor(),
+
+transform_train = transforms.Compose([transforms.ToPILImage(),
                                       transforms.RandomHorizontalFlip(),
-                                      transforms.RandomAffine(0, shear=10, scale=(0.8, 1.2)),
-                                      
+                                      transforms.RandomAffine(0, shear=10, scale=(0.8, 1.2)),  
+                                      transforms.ToTensor()
                                       ])
-'''                           
+                      
 
 # Load data 
 '''
@@ -31,14 +34,13 @@ train_dataset = CustomDataset(csv_file = "/Users/hcagri/Documents/ComputerVision
                         )
 '''
 train_dataset = CustomDataset(root_dir = 'data\data_latest', 
-                              transform=None
+                              transform=transform_train
                             )
 
 train_loader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
-model = CNNModel_Small(NUM_CLASSES).to(device)
+model = CNNModel(NUM_CLASSES).to(device)
 
-'''
 state_dict = torch.load('pretrained/checkpoint_37.pth', map_location='cpu')
 del state_dict['fc.3.weight']
 del state_dict['fc.3.bias']
@@ -47,10 +49,14 @@ model.load_state_dict(state_dict, strict=False)
 
 for param in model.conv_net.parameters():
     param.requires_grad = False
-'''
+
+for param in model.fc[0].parameters():
+    param.requires_grad = False
+
+
 criterion = nn.CrossEntropyLoss()
 
-optimizer = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE)
+optimizer = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE, weight_decay=1e-4)
 
 model = model.float()
 
@@ -78,9 +84,9 @@ for epoch in range(EPOCHS):
 
         loop.set_description(f"Epoch [{epoch+1}/{EPOCHS}]")
       
-    if epoch+1 == 15:
+    if epoch+1 == 20:
         optimizer.param_groups[0]['lr'] = 0.0002
-    if epoch+1 == 30:
+    if epoch+1 == 33:
         optimizer.param_groups[0]['lr'] = 0.00002
     
     if (epoch+1)%5 == 0:

@@ -32,11 +32,11 @@ class CustomDataset(Dataset):
         root, _ = os.path.splitext(name)
         y_label = torch.tensor(int(root.split('_')[-1]))
         y_label = y_label.type(torch.LongTensor)
-
+        image = image.permute(2,0,1)
         if self.transform:
             image = self.transform(image)
 
-        return image.permute(2,0,1), y_label
+        return image, y_label
 
 
 if __name__ == '__main__':
